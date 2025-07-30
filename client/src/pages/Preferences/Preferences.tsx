@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../../contexts/AuthContext';
+import { api } from '../../lib/api';
 import './Preferences.css';
 
 interface PreferencesData {

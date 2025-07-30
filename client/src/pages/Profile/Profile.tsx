@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { api } from '../../contexts/AuthContext';
 import './Profile.css';
 
 interface UserProfile {

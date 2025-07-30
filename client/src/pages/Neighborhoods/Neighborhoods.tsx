@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
 import { Link } from 'react-router-dom';
-import { api } from '../../contexts/AuthContext';
 import './Neighborhoods.css';
 
 interface Neighborhood {

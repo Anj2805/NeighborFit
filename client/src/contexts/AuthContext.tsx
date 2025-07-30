@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 // Types
 interface User {
@@ -22,26 +22,11 @@ interface AuthContextType {
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-
-// Configure axios defaults
-axios.defaults.baseURL = API_BASE_URL;
-
 // Auth Provider Component
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-
-  // Set axios authorization header
-  useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-    }
-  }, [token]);
 
   // Check if user is logged in on app start
   useEffect(() => {
@@ -52,16 +37,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (storedToken && storedUser) {
         try {
           // Verify token is still valid by making a test request
-          axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          
-          // You could make a request to verify token, for now we'll trust localStorage
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
         } catch (error) {
           // Token is invalid, clear storage
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          delete axios.defaults.headers.common['Authorization'];
         }
       }
       
@@ -76,7 +57,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       
-      const response = await axios.post('/auth/login', {
+      const response = await api.post('/auth/login', {
         email,
         password
       });
@@ -91,9 +72,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(newToken);
       setUser(userData);
       
-      // Set axios header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed';
       throw new Error(message);
@@ -107,7 +85,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       
-      const response = await axios.post('/auth/register', {
+      const response = await api.post('/auth/register', {
         name,
         email,
         password
@@ -123,9 +101,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(newToken);
       setUser(userData);
       
-      // Set axios header
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-      
     } catch (error: any) {
       const message = error.response?.data?.message || 'Registration failed';
       throw new Error(message);
@@ -136,16 +111,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Logout function
   const logout = (): void => {
-    // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
-    // Clear state
     setToken(null);
     setUser(null);
-    
-    // Remove axios header
-    delete axios.defaults.headers.common['Authorization'];
   };
 
   const value: AuthContextType = {
@@ -173,5 +142,5 @@ export const useAuth = (): AuthContextType => {
   return context;
 };
 
-// Export axios instance with base configuration
-export const api = axios;
+// Export the api instance for use in other components
+export { api };

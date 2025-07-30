@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { api } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
-import { api } from '../../contexts/AuthContext';
 import './NeighborhoodDetail.css';
 
 interface Neighborhood {
