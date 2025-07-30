@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../contexts/AuthContext';
 import './NeighborhoodDetail.css';
@@ -75,7 +75,6 @@ interface MatchDetails {
 const NeighborhoodDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const navigate = useNavigate();
   
   const [neighborhood, setNeighborhood] = useState<Neighborhood | null>(null);
   const [matchDetails, setMatchDetails] = useState<MatchDetails | null>(null);

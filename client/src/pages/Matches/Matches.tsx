@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../contexts/AuthContext';
 import './Matches.css';
 
@@ -49,7 +48,6 @@ interface Match {
 }
 
 const Matches: React.FC = () => {
-  const { user } = useAuth();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
