@@ -11,7 +11,7 @@ import {
   getCities,
   searchNeighborhoods
 } from '../controllers/neighborhoodController.js';
-import { protect } from '../middleware/protect.js';
+import { protect, admin } from '../middleware/protect.js';
 
 const router = express.Router();
 
@@ -48,19 +48,19 @@ router.get('/:id', getNeighborhoodById);
 router.get('/:id/match-details', protect, getMatchDetails);
 
 // @route   POST /api/neighborhoods
-// @desc    Create new neighborhood (Admin only - for now, any authenticated user)
-// @access  Private
-router.post('/', protect, createNeighborhood);
+// @desc    Create new neighborhood (Admin only)
+// @access  Private/Admin
+router.post('/', protect, admin, createNeighborhood);
 
 // @route   PUT /api/neighborhoods/:id
-// @desc    Update neighborhood (Admin only - for now, any authenticated user)
-// @access  Private
-router.put('/:id', protect, updateNeighborhood);
+// @desc    Update neighborhood (Admin only)
+// @access  Private/Admin
+router.put('/:id', protect, admin, updateNeighborhood);
 
 // @route   DELETE /api/neighborhoods/:id
-// @desc    Delete neighborhood (Admin only - for now, any authenticated user)
-// @access  Private
-router.delete('/:id', protect, deleteNeighborhood);
+// @desc    Delete neighborhood (Admin only)
+// @access  Private/Admin
+router.delete('/:id', protect, admin, deleteNeighborhood);
 
 // @route   POST /api/neighborhoods/:id/reviews
 // @desc    Add review to neighborhood

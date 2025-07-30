@@ -61,6 +61,12 @@
   gap: var(--spacing-6);
 }
 
+.lifestyle-grid.minimal {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
 .lifestyle-item {
   background: var(--gray-50);
   padding: var(--spacing-6);
@@ -73,6 +79,15 @@
   border-color: var(--primary-color);
   background: var(--white);
   box-shadow: var(--shadow-md);
+}
+
+.lifestyle-item.minimal {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0 0 1.5rem 0;
+  border-radius: 0;
+  margin-bottom: 0.5rem;
 }
 
 .lifestyle-header {
@@ -88,6 +103,13 @@
   font-size: var(--font-size-base);
 }
 
+.lifestyle-label.minimal {
+  font-weight: 500;
+  color: var(--gray-900);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
 .lifestyle-value {
   background: var(--primary-color);
   color: var(--white);
@@ -99,6 +121,17 @@
   text-align: center;
 }
 
+.lifestyle-value.minimal {
+  min-width: 2rem;
+  text-align: center;
+  font-size: 1rem;
+  color: var(--gray-700);
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-weight: 500;
+}
+
 .lifestyle-slider {
   width: 100%;
   height: 8px;
@@ -108,6 +141,15 @@
   -webkit-appearance: none;
   margin-bottom: var(--spacing-3);
   cursor: pointer;
+}
+
+.lifestyle-slider.minimal {
+  flex: 1;
+  accent-color: var(--primary-color);
+  height: 2px;
+  background: var(--gray-200);
+  border-radius: 2px;
+  outline: none;
 }
 
 .lifestyle-slider::-webkit-slider-thumb {
@@ -143,6 +185,17 @@
   justify-content: space-between;
   font-size: var(--font-size-xs);
   color: var(--gray-500);
+}
+
+/* Remove old star rating and importance text for minimal UI */
+.star-rating, .lifestyle-value-container, .importance-text, .slider-ticks, .slider-labels, .enhanced-slider-container {
+  display: none !important;
+}
+
+.lifestyle-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 /* Form grid */

@@ -93,6 +93,15 @@ const Navbar: React.FC = () => {
                 >
                   Preferences
                 </Link>
+                {user.isAdmin && (
+                  <Link
+                    to="/admin"
+                    className={`navbar-link ${isActive('/admin')}`}
+                    onClick={closeMenu}
+                  >
+                    Admin Portal
+                  </Link>
+                )}
                 
                 {/* User dropdown */}
                 <div className="navbar-user">

@@ -52,6 +52,7 @@ interface Neighborhood {
     createdAt: string;
   }>;
   overallRating: number;
+  imageUrl?: string; // Added imageUrl to the interface
 }
 
 interface MatchDetails {
@@ -195,6 +196,14 @@ const NeighborhoodDetail: React.FC = () => {
   return (
     <div className="neighborhood-detail-page">
       <div className="container">
+        {/* Image at the top */}
+        <div className="detail-image-container" style={{ width: '100%', height: 260, marginBottom: 24, background: '#f3f3f3', borderRadius: 12, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {neighborhood.imageUrl ? (
+            <img src={neighborhood.imageUrl} alt={neighborhood.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ color: '#bbb', fontSize: 40 }}>No image</span>
+          )}
+        </div>
         {/* Header */}
         <div className="detail-header">
           <div className="breadcrumb">

@@ -42,17 +42,24 @@ const Dashboard: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch user preferences to check if completed
+      let hasPreferences = false;
+      try {
       const preferencesResponse = await api.get('/preferences');
-      const hasPreferences = preferencesResponse.data !== null;
+        hasPreferences = preferencesResponse.data !== null;
+      } catch (err: any) {
+        if (err.response && err.response.status === 404) {
+          hasPreferences = false; // No preferences set, not a fatal error
+        } else {
+          throw err; // Other errors should still be handled as errors
+        }
+      }
       
       let matches = [];
       let topScore = 0;
       
       if (hasPreferences) {
-        // Fetch matches if preferences exist
         const matchesResponse = await api.get('/neighborhoods/matches');
-        matches = matchesResponse.data.slice(0, 3); // Top 3 matches
+        matches = (matchesResponse.data.matches || []).slice(0, 3); // Top 3 matches
         topScore = matches.length > 0 ? matches[0].matchScore : 0;
       }
       

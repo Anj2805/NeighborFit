@@ -12,6 +12,7 @@ import Neighborhoods from './pages/Neighborhoods/Neighborhoods';
 import NeighborhoodDetail from './pages/Neighborhoods/NeighborhoodDetail';
 import Matches from './pages/Matches/Matches';
 import Profile from './pages/Profile/Profile';
+import AdminPortal from './pages/AdminPortal';
 import './App.css';
 
 // Protected Route Component
@@ -44,6 +45,22 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   }
   
   return user ? <Navigate to="/dashboard" /> : <>{children}</>;
+};
+
+// Admin Route Component
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" />;
+  if (!user.isAdmin) return <Navigate to="/dashboard" />;
+  return <>{children}</>;
 };
 
 const AppContent: React.FC = () => {
@@ -106,6 +123,16 @@ const AppContent: React.FC = () => {
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
+            } 
+          />
+          
+          {/* Admin Route */}
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <AdminPortal />
+              </AdminRoute>
             } 
           />
           

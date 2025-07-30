@@ -4,6 +4,7 @@ const neighborhoodSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
   city: { type: String, required: true },
   state: { type: String, required: true },
+  imageUrl: { type: String },
   country: { type: String, default: 'India' },
   
   // Lifestyle metrics (1-10 scale)

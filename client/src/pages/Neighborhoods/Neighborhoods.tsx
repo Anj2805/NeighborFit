@@ -30,6 +30,7 @@ interface Neighborhood {
     averageRent2BHK?: number;
     averageRent3BHK?: number;
   };
+  imageUrl?: string; // Added imageUrl to the interface
 }
 
 interface Filters {
@@ -47,10 +48,16 @@ const Neighborhoods: React.FC = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  
   const [filters, setFilters] = useState<Filters>({
     city: '',
     state: '',
-    minSafety: 1,
+    minSafety: 0, // Changed from 1 to 0 to show all neighborhoods by default
     maxRent: 100000,
     sortBy: 'name'
   });
@@ -60,7 +67,7 @@ const Neighborhoods: React.FC = () => {
 
   useEffect(() => {
     fetchNeighborhoods();
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   useEffect(() => {
     applyFilters();
@@ -69,14 +76,22 @@ const Neighborhoods: React.FC = () => {
   const fetchNeighborhoods = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/neighborhoods');
+      const response = await api.get('/neighborhoods', {
+        params: {
+          page: currentPage,
+          limit: itemsPerPage,
+          sortBy: filters.sortBy
+        }
+      });
       const data = response.data;
       
-      setNeighborhoods(data);
+      setNeighborhoods(data.neighborhoods);
+      setTotalPages(data.pagination.totalPages);
+      setTotalItems(data.pagination.totalItems);
       
       // Extract unique cities and states for filters
-      const uniqueCities = [...new Set(data.map((n: Neighborhood) => n.city))].sort() as string[];
-      const uniqueStates = [...new Set(data.map((n: Neighborhood) => n.state))].sort() as string[];
+      const uniqueCities = [...new Set(data.neighborhoods.map((n: Neighborhood) => n.city))].sort() as string[];
+      const uniqueStates = [...new Set(data.neighborhoods.map((n: Neighborhood) => n.state))].sort() as string[];
       
       setCities(uniqueCities);
       setStates(uniqueStates);
@@ -111,7 +126,22 @@ const Neighborhoods: React.FC = () => {
                          (neighborhood.housing.averageRent2BHK && neighborhood.housing.averageRent2BHK <= filters.maxRent) ||
                          (neighborhood.housing.averageRent3BHK && neighborhood.housing.averageRent3BHK <= filters.maxRent);
       
-      return matchesSearch && matchesCity && matchesState && matchesSafety && matchesRent;
+      const shouldInclude = matchesSearch && matchesCity && matchesState && matchesSafety && matchesRent;
+      
+      // Debug logging for filtered out neighborhoods
+      if (!shouldInclude) {
+        console.log(`Neighborhood "${neighborhood.name}" filtered out:`, {
+          matchesSearch,
+          matchesCity,
+          matchesState,
+          matchesSafety,
+          matchesRent,
+          safety: neighborhood.metrics.safety,
+          minSafety: filters.minSafety
+        });
+      }
+      
+      return shouldInclude;
     });
 
     // Apply sorting
@@ -146,11 +176,20 @@ const Neighborhoods: React.FC = () => {
     setFilters({
       city: '',
       state: '',
-      minSafety: 1,
+      minSafety: 0, // Changed from 1 to 0 to show all neighborhoods by default
       maxRent: 100000,
       sortBy: 'name'
     });
     setSearchTerm('');
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   const getMetricColor = (value: number) => {
@@ -236,6 +275,7 @@ const Neighborhoods: React.FC = () => {
                 onChange={(e) => handleFilterChange('minSafety', parseInt(e.target.value))}
                 className="filter-select"
               >
+                <option value={0}>Any Safety</option>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
                   <option key={score} value={score}>{score}+</option>
                 ))}
@@ -283,6 +323,12 @@ const Neighborhoods: React.FC = () => {
         <div className="results-summary">
           <p>
             Showing {filteredNeighborhoods.length} of {neighborhoods.length} neighborhoods
+            {neighborhoods.length !== totalItems && ` (${totalItems} total in database)`}
+            {filteredNeighborhoods.length !== neighborhoods.length && (
+              <span style={{ color: '#666', fontSize: '0.9em' }}>
+                {' '}• {neighborhoods.length - filteredNeighborhoods.length} filtered out
+              </span>
+            )}
           </p>
         </div>
 
@@ -290,6 +336,14 @@ const Neighborhoods: React.FC = () => {
         <div className="neighborhoods-grid">
           {filteredNeighborhoods.map(neighborhood => (
             <div key={neighborhood._id} className="neighborhood-card">
+              {/* Image at the top */}
+              <div className="neighborhood-image-container" style={{ width: '100%', height: 160, marginBottom: 12, background: '#f3f3f3', borderRadius: 8, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {neighborhood.imageUrl ? (
+                  <img src={neighborhood.imageUrl} alt={neighborhood.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ color: '#bbb', fontSize: 32 }}>No image</span>
+                )}
+              </div>
               <div className="card-header">
                 <h3 className="neighborhood-name">{neighborhood.name}</h3>
                 <div className="neighborhood-location">
@@ -361,6 +415,60 @@ const Neighborhoods: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="pagination-container" style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="btn btn-outline"
+              style={{ padding: '0.5rem 1rem' }}
+            >
+              Previous
+            </button>
+            
+            <div className="page-numbers" style={{ display: 'flex', gap: '0.5rem' }}>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`btn ${currentPage === page ? 'btn-primary' : 'btn-outline'}`}
+                  style={{ padding: '0.5rem 0.75rem', minWidth: '2.5rem' }}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="btn btn-outline"
+              style={{ padding: '0.5rem 1rem' }}
+            >
+              Next
+            </button>
+            
+            <select
+              value={itemsPerPage}
+              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+              style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: 4 }}
+            >
+              <option value={5}>5 per page</option>
+              <option value={10}>10 per page</option>
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+            </select>
+          </div>
+        )}
+
+        {/* Show pagination info even when there's only one page */}
+        {totalPages === 1 && totalItems > 0 && (
+          <div style={{ marginTop: '2rem', textAlign: 'center', color: '#666', fontSize: '0.9em' }}>
+            Showing all {totalItems} neighborhoods
+          </div>
+        )}
 
         {filteredNeighborhoods.length === 0 && !loading && (
           <div className="empty-state">

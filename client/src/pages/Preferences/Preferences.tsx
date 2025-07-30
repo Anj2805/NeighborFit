@@ -218,82 +218,13 @@ const Preferences: React.FC = () => {
           {/* Lifestyle Preferences */}
           <div className="form-section">
             <h2>Lifestyle Preferences</h2>
-            <p>Rate how important each factor is to you (1 = Not Important, 10 = Very Important)</p>
-            
-            <div className="lifestyle-grid">
+            <div className="lifestyle-grid minimal">
               {Object.entries(lifestyleLabels).map(([key, label]) => {
                 const currentValue = preferences.lifestyle[key as keyof typeof preferences.lifestyle];
-                const getImportanceText = (value: number) => {
-                  if (value <= 2) return 'Not Important';
-                  if (value <= 4) return 'Slightly Important';
-                  if (value <= 6) return 'Moderately Important';
-                  if (value <= 8) return 'Very Important';
-                  return 'Extremely Important';
-                };
-                
-                const getImportanceColor = (value: number) => {
-                  if (value <= 2) return '#ef4444'; // red
-                  if (value <= 4) return '#f97316'; // orange
-                  if (value <= 6) return '#eab308'; // yellow
-                  if (value <= 8) return '#22c55e'; // green
-                  return '#16a34a'; // dark green
-                };
-
                 return (
-                  <div key={key} className="lifestyle-item">
-                    <div className="lifestyle-header">
-                      <label className="lifestyle-label">{label}</label>
-                      <div className="lifestyle-value-container">
-                        <span
-                          className="lifestyle-value"
-                          style={{ backgroundColor: getImportanceColor(currentValue) }}
-                        >
-                          {currentValue}
-                        </span>
-                        <span className="importance-text">
-                          {getImportanceText(currentValue)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {/* Star Rating System */}
-                    <div className="star-rating">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
-                        <button
-                          key={rating}
-                          type="button"
-                          className={`star ${rating <= currentValue ? 'active' : ''}`}
-                          onClick={() => handleLifestyleChange(
-                            key as keyof typeof preferences.lifestyle,
-                            rating
-                          )}
-                          onMouseEnter={(e) => {
-                            // Add hover effect
-                            const stars = e.currentTarget.parentElement?.querySelectorAll('.star');
-                            stars?.forEach((star, index) => {
-                              if (index < rating) {
-                                star.classList.add('hover');
-                              } else {
-                                star.classList.remove('hover');
-                              }
-                            });
-                          }}
-                          onMouseLeave={(e) => {
-                            // Remove hover effect
-                            const stars = e.currentTarget.parentElement?.querySelectorAll('.star');
-                            stars?.forEach((star) => {
-                              star.classList.remove('hover');
-                            });
-                          }}
-                          title={`Rate ${rating}/10`}
-                        >
-                          ★
-                        </button>
-                      ))}
-                    </div>
-                    
-                    {/* Alternative: Enhanced Slider */}
-                    <div className="enhanced-slider-container">
+                  <div key={key} className="lifestyle-item minimal">
+                    <label className="lifestyle-label minimal">{label}</label>
+                    <div className="lifestyle-slider-row">
                       <input
                         type="range"
                         min="1"
@@ -303,30 +234,9 @@ const Preferences: React.FC = () => {
                           key as keyof typeof preferences.lifestyle,
                           parseInt(e.target.value)
                         )}
-                        className="enhanced-slider"
-                        style={{
-                          background: `linear-gradient(to right, ${getImportanceColor(currentValue)} 0%, ${getImportanceColor(currentValue)} ${(currentValue - 1) * 11.11}%, #e5e7eb ${(currentValue - 1) * 11.11}%, #e5e7eb 100%)`
-                        }}
+                        className="lifestyle-slider minimal"
                       />
-                      <div className="slider-ticks">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((tick) => (
-                          <div
-                            key={tick}
-                            className={`tick ${tick <= currentValue ? 'active' : ''}`}
-                            onClick={() => handleLifestyleChange(
-                              key as keyof typeof preferences.lifestyle,
-                              tick
-                            )}
-                          >
-                            {tick}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div className="slider-labels">
-                      <span>1 - Not Important</span>
-                      <span>10 - Extremely Important</span>
+                      <span className="lifestyle-value minimal">{currentValue}</span>
                     </div>
                   </div>
                 );
