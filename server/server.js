@@ -18,17 +18,23 @@ const app = createApp({ allowedOrigins });
 const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
 
-initRealtime(server, {
-  cors: {
-    origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
-    credentials: true
-  }
-});
-startRealtimeLoops({
-  liveUserIntervalMs: Number(process.env.LIVE_USERS_POLL_MS || 30000)
-});
+// Only listen if running directly (not imported as a module for Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  initRealtime(server, {
+    cors: {
+      origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
+      credentials: true
+    }
+  });
 
-server.listen(PORT, () => {
-  console.log(`🚀 NeighborFit Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+  startRealtimeLoops({
+    liveUserIntervalMs: Number(process.env.LIVE_USERS_POLL_MS || 30000)
+  });
+
+  server.listen(PORT, () => {
+    console.log(`🚀 NeighborFit Server running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
+
+export default app;
