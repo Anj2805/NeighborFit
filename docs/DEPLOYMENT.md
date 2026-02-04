@@ -1,112 +1,98 @@
 # Deployment Guide for NeighborFit
 
+## 🚀 Deployment Strategy: Split Hosting
+
+Because this project uses **Socket.io** (WebSockets) and background tasks for the Admin Platform, the backend requires a **stateful** hosting environment. Vercel Serverless functions are stateless and **will not support** the real-time features reliably.
+
+**Recommendation**:
+- **Frontend (Client)**: Deploy to **Vercel** (Excellent for static/SPA sites).
+- **Backend (Server)**: Deploy to **Render**, **Railway**, or **Heroku** (Supports long-running Node.js processes).
+
+---
+
 ## Prerequisites
 
-1. **MongoDB Database**: Set up a MongoDB database (MongoDB Atlas recommended)
-2. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
-3. **GitHub Repository**: Push your code to GitHub
+1. **GitHub Repository**: Code pushed to GitHub.
+2. **MongoDB Atlas**: Database cluster set up.
+3. **Accounts**: Sign up for [Vercel](https://vercel.com) and [Render](https://render.com).
 
-## Step 1: Deploy Backend (Server)
+---
 
-### 1.1 Prepare Backend
-```bash
-cd server
-```
+## Part 1: Deploy Backend (Render)
 
-### 1.2 Deploy to Vercel
-1. Go to [vercel.com](https://vercel.com)
-2. Click "New Project"
-3. Import your GitHub repository
-4. Set the following configuration:
-   - **Framework Preset**: Node.js
-   - **Root Directory**: `server`
+We recommended Render for its easy free tier and native Node.js support.
+
+1. **Create Service**:
+   - Go to [dashboard.render.com](https://dashboard.render.com).
+   - Click **New +** -> **Web Service**.
+   - Connect your GitHub repo.
+
+2. **Configuration**:
+   - **Root Directory**: `server` (Important!)
+   - **Runtime**: `Node`
    - **Build Command**: `npm install`
-   - **Output Directory**: (leave empty)
-   - **Install Command**: `npm install`
+   - **Start Command**: `npm start`
+   - **Instance Type**: Free (or Starter for better performance)
 
-### 1.3 Environment Variables
-Add these environment variables in Vercel dashboard:
-```
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_super_secret_jwt_key_here
-NODE_ENV=production
-```
+3. **Environment Variables** (Add these in the "Environment" tab):
+   - `NODE_ENV`: `production`
+   - `MONGODB_URI`: `your_atlas_connection_string`
+   - `JWT_SECRET`: `your_secure_secret`
+   - `CLIENT_URL`: `https://your-frontend-project.vercel.app` (You will update this after Part 2)
+   - `PORT`: `10000` (Render default)
 
-### 1.4 Deploy
-Click "Deploy" and wait for the build to complete.
+4. **Deploy**:
+   - Click **Create Web Service**.
+   - Wait for the build to finish.
+   - **Copy the Backend URL** (e.g., `https://neighborfit-api.onrender.com`).
 
-### 1.5 Get Backend URL
-Copy the deployment URL (e.g., `https://your-app-name.vercel.app`)
+---
 
-## Step 2: Deploy Frontend (Client)
+## Part 2: Deploy Frontend (Vercel)
 
-### 2.1 Update API URL
-1. Go to your GitHub repository
-2. Edit `client/.env` or create `client/.env.production`:
-```
-VITE_API_URL=https://your-backend-url.vercel.app/api
-```
+1. **Create Project**:
+   - Go to [vercel.com/new](https://vercel.com/new).
+   - Import your repository.
+   - Set **Root Directory** to `client` (Click "Edit" next to Root Directory).
 
-### 2.2 Deploy to Vercel
-1. Go to [vercel.com](https://vercel.com)
-2. Click "New Project"
-3. Import your GitHub repository again
-4. Set the following configuration:
-   - **Framework Preset**: Vite
-   - **Root Directory**: `client`
+2. **Configure Build**:
+   - **Framework Preset**: Vite (should auto-detect).
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
 
-### 2.3 Deploy
-Click "Deploy" and wait for the build to complete.
+3. **Environment Variables**:
+   - `VITE_API_URL`: Paste your **Render Backend URL** (e.g., `https://neighborfit-api.onrender.com/api`)
+     > **Note**: Ensure you append `/api` if your client expects it, or just the base URL depending on your `api.ts` config.
 
-## Step 3: Database Setup
+4. **Deploy**:
+   - Click **Deploy**.
 
-### 3.1 Seed Database
-1. Connect to your MongoDB database
-2. Run the seed script:
-```bash
-cd server
-npm run seed
-```
+---
 
-### 3.2 Create Admin User
-Use the script to promote a user to admin:
-```bash
-cd server
-node scripts/promoteAdmin.js admin@example.com
-```
+## Part 3: Final Wiring
 
-## Step 4: Test Deployment
+1. **Update Backend CORS**:
+   - Go back to **Render Dashboard** -> Your Service -> Environment.
+   - Update `CLIENT_URL` to match your new **Vercel Frontend URL** (e.g., `https://neighborfit.vercel.app`).
+   - Render will auto-redeploy.
 
-1. **Frontend**: Visit your frontend URL
-2. **Backend**: Test API endpoints at `your-backend-url.vercel.app/api/neighborhoods`
-3. **Admin Portal**: Login as admin and test admin features at `your-frontend-url.vercel.app/admin`
+2. **Verify Admin Socket**:
+   - Login to the Admin Portal.
+   - Check if the "Real-time" indicator is active.
+   - If red/disconnected, check console logs for 400/ConnectionRefused errors (usually CORS or wrong URL).
 
-> **Note**: For local testing before deployment, use the `./start-dev.sh` script to run both services simultaneously.
+---
 
 ## Troubleshooting
 
-### Common Issues:
-1. **CORS Errors**: Ensure your backend CORS settings include your frontend domain
-2. **Database Connection**: Check MongoDB connection string and network access
-3. **Environment Variables**: Verify all environment variables are set in Vercel
-4. **Build Errors**: Check build logs in Vercel dashboard
+### Socket.io Connection Issues
+- Ensure `VITE_API_URL` does **not** have a trailing slash if your code appends one.
+- Ensure Render environment variable `CLIENT_URL` matches exactly (no trailing slash).
+- Render Free Tier spins down after inactivity; initial connection might take 50s to wake up.
 
-### Environment Variables Checklist:
-- [ ] `MONGODB_URI` (Backend) - **Critical**
-- [ ] `JWT_SECRET` (Backend) - **Critical**
-- [ ] `VITE_API_URL` (Frontend) - **Critical**
-- [ ] `NODE_ENV=production` (Backend)
+### Database
+- Ensure MongoDB Atlas "Network Access" allows `0.0.0.0/0` (Anywhere) so Render can connect.
 
-## URLs Structure
-- **Frontend**: `https://your-frontend-app.vercel.app`
-- **Backend API**: `https://your-backend-app.vercel.app/api`
-- **Admin Portal**: `https://your-frontend-app.vercel.app/admin`
-
-## Security Notes
-1. Use strong JWT secrets
-2. Enable MongoDB network security
-3. Set up proper CORS origins
-4. Use environment variables for all secrets
+### Build Failures
+- **Client**: "Module not found"? Check case sensitivity in imports.
+- **Server**: "Script not found"? Ensure Root Directory is set to `server`.
