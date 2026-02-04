@@ -5,6 +5,7 @@ const neighborhoodSchema = new mongoose.Schema({
   city: { type: String, required: true },
   state: { type: String, required: true },
   imageUrl: { type: String },
+  images: [{ type: String }],
   country: { type: String, default: 'India' },
   
   // Lifestyle metrics (1-10 scale)
@@ -64,6 +65,9 @@ const neighborhoodSchema = new mongoose.Schema({
   
   // Overall rating calculated from reviews
   overallRating: { type: Number, min: 1, max: 5, default: 3 },
+  viewCount: { type: Number, default: 0 },
+  matchSuccessRate: { type: Number, min: 0, max: 100, default: 0 },
+  sentimentScore: { type: Number, min: -1, max: 1, default: 0 },
   
   // Data sources and last updated
   dataSource: { type: String, default: 'manual' },

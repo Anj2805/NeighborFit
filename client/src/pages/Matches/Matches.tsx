@@ -47,6 +47,101 @@ interface Match {
   };
 }
 
+interface RawMatch {
+  _id?: string;
+  name?: string;
+  city?: string;
+  state?: string;
+  metrics?: Partial<Match['neighborhood']['metrics']>;
+  overallRating?: number;
+  amenities?: Partial<Match['neighborhood']['amenities']>;
+  housing?: Match['neighborhood']['housing'];
+  matchScore?: number;
+  score?: number;
+  matchBreakdown?: Match['matchBreakdown'];
+  bonuses?: Match['bonuses'];
+  neighborhood?: RawMatch;
+}
+
+const defaultMetrics = {
+  safety: 5,
+  affordability: 5,
+  cleanliness: 5,
+  walkability: 5,
+  nightlife: 5,
+  transport: 5
+};
+
+const defaultAmenities = {
+  schools: 0,
+  hospitals: 0,
+  parks: 0,
+  restaurants: 0,
+  shoppingCenters: 0,
+  gyms: 0
+};
+
+const normalizeMatch = (raw: RawMatch): Match | null => {
+  const neighborhood = raw.neighborhood || raw;
+  if (!neighborhood?._id) {
+    return null;
+  }
+
+  const metrics = neighborhood.metrics || {};
+  const amenities = neighborhood.amenities || {};
+
+  return {
+    neighborhood: {
+      _id: neighborhood._id,
+      name: neighborhood.name || 'Unknown Neighborhood',
+      city: neighborhood.city || 'Unknown City',
+      state: neighborhood.state || '',
+      metrics: {
+        safety: metrics.safety ?? defaultMetrics.safety,
+        affordability: metrics.affordability ?? defaultMetrics.affordability,
+        cleanliness: metrics.cleanliness ?? defaultMetrics.cleanliness,
+        walkability: metrics.walkability ?? defaultMetrics.walkability,
+        nightlife: metrics.nightlife ?? defaultMetrics.nightlife,
+        transport: metrics.transport ?? defaultMetrics.transport
+      },
+      overallRating: neighborhood.overallRating ?? 0,
+      amenities: {
+        schools: amenities.schools ?? defaultAmenities.schools,
+        hospitals: amenities.hospitals ?? defaultAmenities.hospitals,
+        parks: amenities.parks ?? defaultAmenities.parks,
+        restaurants: amenities.restaurants ?? defaultAmenities.restaurants,
+        shoppingCenters: amenities.shoppingCenters ?? defaultAmenities.shoppingCenters,
+        gyms: amenities.gyms ?? defaultAmenities.gyms
+      },
+      housing: neighborhood.housing
+    },
+    matchScore: Math.round(
+      typeof raw.matchScore === 'number'
+        ? raw.matchScore
+        : typeof raw.score === 'number'
+          ? raw.score
+          : 0
+    ),
+    matchBreakdown: raw.matchBreakdown || {},
+    bonuses: {
+      rating: raw.bonuses?.rating ?? 0,
+      amenities: raw.bonuses?.amenities ?? 0
+    }
+  };
+};
+
+const normalizeMatchesResponse = (payload: any): Match[] => {
+  const rawMatches: RawMatch[] = Array.isArray(payload)
+    ? payload
+    : Array.isArray(payload?.matches)
+      ? payload.matches
+      : [];
+
+  return rawMatches
+    .map(normalizeMatch)
+    .filter((match): match is Match => Boolean(match));
+};
+
 const Matches: React.FC = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +165,8 @@ const Matches: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.get('/neighborhoods/matches');
-      setMatches(response.data);
+      const normalized = normalizeMatchesResponse(response.data);
+      setMatches(normalized);
     } catch (err: any) {
       console.error('Error fetching matches:', err);
       if (err.response?.status === 404) {

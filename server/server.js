@@ -1,55 +1,34 @@
-import express from 'express';
+import http from 'http';
 import dotenv from 'dotenv';
-import cors from 'cors';
 import connectDB from './config/database.js';
-import authRoutes from './routes/authRoutes.js';
-import userPreferencesRoutes from './routes/userPreferencesRoutes.js';
-import neighborhoodRoutes from './routes/neighborhoodRoutes.js';
+import { initRealtime, startRealtimeLoops } from './services/realtimeService.js';
+import createApp from './app.js';
 
 dotenv.config();
 connectDB();
 
-const app = express();
+// Configure CORS so credentialed requests from the client aren't rejected
+const allowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/preferences', userPreferencesRoutes);
-app.use('/api/neighborhoods', neighborhoodRoutes);
-
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.json({
-    message: 'NeighborFit API running ✅',
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      preferences: '/api/preferences',
-      neighborhoods: '/api/neighborhoods'
-    }
-  });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+const app = createApp({ allowedOrigins });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+initRealtime(server, {
+  cors: {
+    origin: allowedOrigins.length > 0 ? allowedOrigins : '*',
+    credentials: true
+  }
+});
+startRealtimeLoops({
+  liveUserIntervalMs: Number(process.env.LIVE_USERS_POLL_MS || 30000)
+});
+
+server.listen(PORT, () => {
   console.log(`🚀 NeighborFit Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

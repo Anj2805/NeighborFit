@@ -20,22 +20,9 @@ SERVER_PID=$!
 # Wait a moment for server to start
 sleep 3
 
-# Start client in background (go back to root first)
-echo "🌐 Starting frontend client..."
-cd ../client && npm run dev &
-CLIENT_PID=$!
-=======
-# Start server in background
-echo "📡 Starting backend server..."
-(cd server && npm run dev) &
-SERVER_PID=$!
-
-# Wait a moment for server to start
-sleep 3
-
 # Start client in background
 echo "🌐 Starting frontend client..."
-(cd client && npm run dev) &
+cd client && npm run dev &
 CLIENT_PID=$!
 
 echo "✅ Both servers are starting..."

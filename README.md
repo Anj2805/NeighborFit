@@ -15,6 +15,8 @@ A sophisticated neighborhood-lifestyle matching platform that helps users find t
 - **User Management**: Admin capabilities to manage user accounts and permissions
 - **Image Support**: Visual neighborhood representation with image uploads
 - **Pagination**: Efficient browsing with paginated results
+- **Realtime Admin Control Center**: Socket.io powered dashboards, live activity monitor, and instant counters for online users and system events
+- **Bulk Admin Operations**: CSV import/export, bulk user actions, and audit logging with undo hooks
 
 ### Key Metrics Analyzed
 - **Safety & Security** (25% weight)
@@ -61,6 +63,8 @@ neighborfit/
 │   ├── scripts/            # Utility scripts
 │   ├── services/           # Business logic services
 │   └── vercel.json         # Vercel deployment config
+├── docs/                   # Documentation and guides
+├── start-dev.sh            # One-click development startup script
 ├── DEPLOYMENT.md           # Deployment guide
 └── package.json            # Root package.json for workspaces
 ```
@@ -92,15 +96,17 @@ cd ../server && npm install
 
 ### 3. Environment Configuration
 
-Create `.env` file in the server directory:
+Create `.env` file in the `server` directory:
 ```env
 MONGODB_URI=mongodb://localhost:27017/neighborfit
 JWT_SECRET=your_super_secret_jwt_key_here
 NODE_ENV=development
 PORT=8000
+CLIENT_URL=http://localhost:5173
+LIVE_USERS_POLL_MS=30000
 ```
 
-Create `.env` file in the client directory:
+Create `.env` file in the `client` directory:
 ```env
 VITE_API_URL=http://localhost:8000/api
 ```
@@ -113,6 +119,8 @@ cd server
 npm run seed
 ```
 
+The bundled seed script loads **30 curated neighborhoods** focused on Delhi, Gurugram, and Bangalore, each with realistic metrics, housing data, amenities, and image URLs.
+
 ### 5. Create Admin User
 
 Promote a user to admin status:
@@ -123,20 +131,21 @@ node scripts/promoteAdmin.js <user-email>
 
 ### 6. Start the Application
 
-**Development Mode:**
+You can start both the client and server with a single command:
+
 ```bash
-# Start both client and server concurrently
-npm run dev:client    # Terminal 1
-npm run dev:server    # Terminal 2
+# Start development environment
+./start-dev.sh
 ```
 
-**Or start individually:**
-```bash
-# Start server (from server directory)
-npm run dev
+**Alternative (Manual Start):**
 
-# Start client (from client directory)
-npm run dev
+```bash
+# Terminal 1: Start Backend
+npm run dev:server
+
+# Terminal 2: Start Frontend
+npm run dev:client
 ```
 
 ## 🎯 API Endpoints
@@ -169,6 +178,13 @@ npm run dev
 - `POST /api/neighborhoods` - Create neighborhood (admin only)
 - `PUT /api/neighborhoods/:id` - Update neighborhood (admin only)
 - `DELETE /api/neighborhoods/:id` - Delete neighborhood (admin only)
+- `GET /api/admin/dashboard-stats` - Aggregated KPIs with caching + realtime invalidation
+- `GET /api/admin/user-analytics` - Growth trend, demographics, age buckets
+- `GET /api/admin/neighborhood-analytics` - City distribution, match success, sentiment trends
+- `GET /api/admin/activity-log` - Paginated admin audit feed
+- `POST /api/admin/users/bulk-actions` - Suspend/activate/soft delete/toggle admin in bulk
+- `POST /api/admin/neighborhoods/import` - CSV/Excel import with validation
+- `GET /api/admin/users/export` - CSV export for filtered users
 
 ## 🧮 Matching Algorithm
 
@@ -198,6 +214,20 @@ The NeighborFit matching algorithm uses a sophisticated weighted scoring system:
 - **Interactive Sliders**: For setting lifestyle preferences
 - **Match Cards**: Visual representation of neighborhood matches
 - **Metric Bars**: Progress bars showing compatibility scores
+
+## 🧪 Troubleshooting & Tips
+
+- **401 or CORS errors during local development**  
+  Ensure the backend `CLIENT_URL` env var matches your frontend origin (e.g., `http://localhost:5173`) and restart the Express server so the credential-aware CORS configuration picks it up.
+
+- **Matches page shows “Complete your preferences first”**  
+  Personalized matches require saved preferences. Fill out the Preferences form and submit it; the dashboard and matches pages will refresh with data once `/api/preferences` returns a document.
+
+- **Neighborhood detail “match details” returning 404**  
+  The detail page calls `/api/neighborhoods/:id/match-details`. This endpoint requires an authenticated user *with* preferences. Make sure you are logged in and have run through the preferences flow before visiting the detail view.
+
+- **Password visibility & toast timing**  
+  The login and registration forms now ship with eye icons that toggle password visibility, and failed login toasts remain visible because the client no longer forces a redirect on credential errors. If you still don’t see the toast, confirm you’re not auto-refreshing the page or navigating away immediately after the request.
 - **Filter System**: Advanced filtering with real-time updates
 - **Pagination Controls**: Efficient browsing of large datasets
 - **Image Display**: Visual neighborhood representation
@@ -282,6 +312,59 @@ To migrate from local MongoDB to MongoDB Atlas:
 mongodb+srv://username:password@cluster.mongodb.net/neighborfit?retryWrites=true&w=majority
 ```
 
+## 🚀 Major Update: Admin Platform Upgrade
+
+We have recently completed a comprehensive overhaul of the Admin Platform to support scaling up to 10k users and real-time operations.
+
+### Phase 0 – Discovery & Architecture (2-3 days)
+*   **Targets**: 10k users, 500 neighborhoods, <2s realtime latency.
+*   **Tech Stack**: React Query + Zustand, Socket.io, Recharts, CSV/PDF libs, backend service boundaries.
+*   **Architecture**: Updated ERD (users.last_active, neighborhoods.view_count, admin_activity_logs), RBAC matrix, caching strategy.
+*   **Deliverables**: Architecture doc, API contract drafts, component hierarchy diagram.
+
+### Phase 1 – Backend Foundations (1 week)
+*   **Schema & Seeding**: Mongoose migrations for new fields/collections.
+*   **Analytics Services**: Aggregation pipeline for user growth, city distribution, and sentiment (cached).
+*   **New Routes**: `/admin/dashboard-stats`, `/admin/user-analytics`, `/admin/neighborhood-analytics`, `/admin/activity-log`, bulk operations, CSV import.
+*   **Real-time** Integrated Socket.io server for live events (registrations, updates, alerts).
+*   **Security**: Hardened admin middleware, role checks, activity logging, soft delete, impersonation safeguards.
+*   **Testing**: API tests (Jest/Supertest) for new endpoints.
+
+### Phase 2 – Frontend Admin Shell (1 week)
+*   **Layout**: Responsive sidebar, header, notifications, dark/light toggle.
+*   **State Management**: `React Query` for server state, `Zustand` for UI state, WebSocket context.
+*   **Components**: Reusable `DataTable`, `AnalyticsCard`, `ChartBlock`, `DateRangePicker`, `ExportMenu`, `ConfirmDialog`, `ActivityFeed`.
+*   **Auth**: Guard protection for `/admin/*` routes.
+
+### Phase 3 – Analytics Dashboard (1 week)
+*   **Visualizations**: Stat cards, user growth line charts, city distribution bar charts, demographic pies, activity heatmaps using Recharts.
+*   **Controls**: Date range picker with auto-refetching.
+*   **Exports**: CSV/PDF export capability.
+*   **Live Updates**: Real-time tiles for live counters and notifications.
+
+### Phase 4 – User Management Suite (1.5 weeks)
+*   **Table**: Pagination, column filters, quick search, saved views.
+*   **Actions**: Bulk actions workflow, CSV export, suspend/activate, soft delete, admin toggle.
+*   **Detail View**: Modal for profile, preferences, activity history, reviews, and impersonation.
+*   **Real-time**: Row updates via WebSocket events.
+
+### Phase 5 – Neighborhood Management (1.5 weeks)
+*   **Advanced Table**: Filtering by city, rating, price ranges.
+*   **Bulk Operations**: Edit/delete, CSV import with preview.
+*   **Editor**: Tabbed form (basics, metrics, amenities, housing) with drag-drop image upload.
+*   **Features**: Duplication, analytics panel per neighborhood (views, match success, sentiment).
+
+### Phase 6 – Realtime & Monitoring Enhancements (0.5 week)
+*   **Activity Monitor**: Widget fed by WebSocket events.
+*   **Notifications**: Admin notification center for new users/updates.
+*   **System Health**: Dashboard for DB, cache, and socket status (`/admin/system-health`).
+*   **Controls**: Backup and cache management UI.
+
+### Phase 7 – Security, QA, Docs (1 week)
+*   **Verification**: RBAC checks, admin activity log viewer with revert hooks.
+*   **Testing**: Load tests on analytics queries, smoke tests, basic Cypress/Vitest coverage.
+*   **Documentation**: Updated README, deployment docs, UAT checklist.
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -316,7 +399,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Team
 
-- **Developer**: [Your Name]
+- **Developer**: Anjali Sinha
 - **Project Type**: Full-Stack MERN Application
 - **Purpose**: Neighborhood-Lifestyle Matching Platform
 

@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { EyeIcon, EyeOffIcon } from '../../components/Icons/EyeIcons';
 import './Auth.css';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const { showToast } = useToast();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -13,6 +16,8 @@ const Register: React.FC = () => {
     password: '',
     confirmPassword: ''
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -48,6 +53,7 @@ const Register: React.FC = () => {
       navigate('/preferences'); // Redirect to preferences after registration
     } catch (err: any) {
       setError(err.message);
+      showToast(err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -68,8 +74,13 @@ const Register: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="auth-form">
             {error && (
-              <div className="alert alert-error">
+              <div className="form-error">
                 {error}
+                {error.includes('already exists') && (
+                  <div className="alert-inline">
+                    Already have an account? <Link to="/login" className="auth-link">Sign in</Link>
+                  </div>
+                )}
               </div>
             )}
 
@@ -111,36 +122,58 @@ const Register: React.FC = () => {
               <label htmlFor="password" className="form-label">
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="Create a password (min 6 characters)"
-                required
-                disabled={loading}
-                minLength={6}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Create a password (min 6 characters)"
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword(prev => !prev)}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
               <label htmlFor="confirmPassword" className="form-label">
                 Confirm Password
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="form-input"
-                placeholder="Confirm your password"
-                required
-                disabled={loading}
-                minLength={6}
-              />
+              <div className="password-input-wrapper">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Confirm your password"
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  aria-pressed={showConfirmPassword}
+                  onClick={() => setShowConfirmPassword(prev => !prev)}
+                >
+                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
             </div>
 
             <button
