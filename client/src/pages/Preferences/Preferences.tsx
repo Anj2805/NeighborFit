@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { useToast } from '../../contexts/ToastContext';
 import './Preferences.css';
 
 interface PreferencesData {
@@ -32,8 +33,7 @@ const Preferences: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const { showToast } = useToast();
   
   const [preferences, setPreferences] = useState<PreferencesData>({
     lifestyle: {
@@ -97,8 +97,12 @@ const Preferences: React.FC = () => {
         setPreferences(response.data);
       }
     } catch (err: any) {
-      console.error('Error fetching preferences:', err);
-      // Don't show error for new users who don't have preferences yet
+      const status = err.response?.status;
+      if (status && status !== 404) {
+        console.error('Error fetching preferences:', err);
+        showToast('Failed to load saved preferences. Please try again.', 'error');
+      }
+      // 404 is expected for new users who haven't saved preferences yet
     } finally {
       setLoading(false);
     }
@@ -173,18 +177,17 @@ const Preferences: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setSaving(true);
 
     try {
       await api.post('/preferences', preferences);
-      setSuccess('Preferences saved successfully!');
+      showToast('Preferences saved successfully!', 'success');
       setTimeout(() => {
         navigate('/dashboard');
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save preferences');
+      const msg = err.response?.data?.message || 'Failed to save preferences';
+      showToast(msg, 'error');
     } finally {
       setSaving(false);
     }
@@ -212,8 +215,6 @@ const Preferences: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="preferences-form">
-          {error && <div className="alert alert-error">{error}</div>}
-          {success && <div className="alert alert-success">{success}</div>}
 
           {/* Lifestyle Preferences */}
           <div className="form-section">

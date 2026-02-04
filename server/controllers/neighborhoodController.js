@@ -1,5 +1,71 @@
 import Neighborhood from '../models/neighborhoodModel.js';
 import MatchingService from '../services/matchingService.js';
+import { emitNeighborhoodUpdated } from '../services/realtimeService.js';
+
+const METRIC_KEYS = ['safety', 'affordability', 'cleanliness', 'walkability', 'nightlife', 'transport'];
+const AMENITY_KEYS = ['schools', 'hospitals', 'parks', 'restaurants', 'shoppingCenters', 'gyms'];
+const HOUSING_KEYS = ['averageRent1BHK', 'averageRent2BHK', 'averageRent3BHK', 'averagePropertyPrice'];
+
+const clampMetric = value => {
+  const num = Number(value);
+  if (Number.isNaN(num)) return 50;
+  return Math.max(1, Math.min(100, num));
+};
+
+const parseNumber = value => {
+  const num = Number(value);
+  return Number.isNaN(num) ? 0 : num;
+};
+
+const normalizeNeighborhoodPayload = (payload = {}) => {
+  const normalized = { ...payload };
+
+  normalized.metrics = normalized.metrics || {};
+  METRIC_KEYS.forEach(key => {
+    if (normalized.metrics[key] !== undefined) {
+      normalized.metrics[key] = clampMetric(normalized.metrics[key]);
+    }
+  });
+
+  normalized.amenities = normalized.amenities || {};
+  AMENITY_KEYS.forEach(key => {
+    if (normalized.amenities[key] !== undefined) {
+      normalized.amenities[key] = parseNumber(normalized.amenities[key]);
+    }
+  });
+
+  normalized.housing = normalized.housing || {};
+  HOUSING_KEYS.forEach(key => {
+    if (normalized.housing[key] !== undefined) {
+      normalized.housing[key] = parseNumber(normalized.housing[key]);
+    }
+  });
+
+  if (Array.isArray(normalized.images)) {
+    normalized.images = normalized.images.filter(Boolean);
+  } else if (typeof normalized.images === 'string') {
+    normalized.images = normalized.images
+      .split(',')
+      .map(img => img.trim())
+      .filter(Boolean);
+  } else {
+    normalized.images = [];
+  }
+
+  if (normalized.imageUrl && !normalized.images.includes(normalized.imageUrl)) {
+    normalized.images.unshift(normalized.imageUrl);
+  }
+
+  normalized.matchSuccessRate = normalized.matchSuccessRate !== undefined
+    ? Math.max(0, Math.min(100, Number(normalized.matchSuccessRate)))
+    : undefined;
+
+  normalized.sentimentScore = normalized.sentimentScore !== undefined
+    ? Math.max(-1, Math.min(1, Number(normalized.sentimentScore)))
+    : undefined;
+
+  return normalized;
+};
 
 /**
  * Get all neighborhoods with optional filtering
@@ -19,8 +85,12 @@ export const getNeighborhoods = async (req, res) => {
     const skip = (page - 1) * limit;
     
     // Get neighborhoods with pagination
+    const sortableFields = ['name', 'createdAt', 'updatedAt', 'viewCount', 'matchSuccessRate', 'overallRating'];
+    const sortField = sortableFields.includes(sortBy) ? sortBy : 'name';
+    const sortDirection = sortField === 'name' ? 1 : -1;
+
     const neighborhoods = await Neighborhood.find(query)
-      .sort({ [sortBy]: 1 })
+      .sort({ [sortField]: sortDirection })
       .skip(skip)
       .limit(parseInt(limit))
       .populate('reviews.userId', 'name');
@@ -72,7 +142,7 @@ export const getNeighborhoodById = async (req, res) => {
  */
 export const createNeighborhood = async (req, res) => {
   try {
-    const neighborhoodData = req.body;
+    const neighborhoodData = normalizeNeighborhoodPayload(req.body);
     
     // Check if neighborhood already exists
     const existingNeighborhood = await Neighborhood.findOne({ 
@@ -88,6 +158,13 @@ export const createNeighborhood = async (req, res) => {
     
     const neighborhood = new Neighborhood(neighborhoodData);
     await neighborhood.save();
+    emitNeighborhoodUpdated({
+      action: 'created',
+      neighborhoodId: neighborhood._id,
+      adminId: req.user?._id,
+      name: neighborhood.name,
+      city: neighborhood.city
+    });
     
     res.status(201).json({
       message: 'Neighborhood created successfully',
@@ -116,14 +193,23 @@ export const updateNeighborhood = async (req, res) => {
     }
     
     // Update fields
-    Object.keys(req.body).forEach(key => {
+    const updates = normalizeNeighborhoodPayload(req.body);
+
+    Object.keys(updates).forEach(key => {
       if (key !== '_id' && key !== '__v') {
-        neighborhood[key] = req.body[key];
+        neighborhood[key] = updates[key];
       }
     });
     
     neighborhood.lastUpdated = new Date();
     await neighborhood.save();
+    emitNeighborhoodUpdated({
+      action: 'updated',
+      neighborhoodId: neighborhood._id,
+      adminId: req.user?._id,
+      name: neighborhood.name,
+      city: neighborhood.city
+    });
     
     res.json({
       message: 'Neighborhood updated successfully',
@@ -152,6 +238,13 @@ export const deleteNeighborhood = async (req, res) => {
     }
     
     await neighborhood.deleteOne();
+    emitNeighborhoodUpdated({
+      action: 'deleted',
+      neighborhoodId: neighborhood._id,
+      adminId: req.user?._id,
+      name: neighborhood.name,
+      city: neighborhood.city
+    });
     
     res.json({ message: 'Neighborhood deleted successfully' });
   } catch (error) {
@@ -210,6 +303,13 @@ export const addNeighborhoodReview = async (req, res) => {
       message: 'Review added successfully',
       review: neighborhood.reviews[neighborhood.reviews.length - 1],
       overallRating: neighborhood.overallRating
+    });
+    emitNeighborhoodUpdated({
+      action: 'review_added',
+      neighborhoodId: neighborhood._id,
+      userId: req.user?._id,
+      rating,
+      city: neighborhood.city
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

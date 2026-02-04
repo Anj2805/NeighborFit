@@ -82,7 +82,9 @@ node scripts/promoteAdmin.js admin@example.com
 
 1. **Frontend**: Visit your frontend URL
 2. **Backend**: Test API endpoints at `your-backend-url.vercel.app/api/neighborhoods`
-3. **Admin Portal**: Login as admin and test admin features
+3. **Admin Portal**: Login as admin and test admin features at `your-frontend-url.vercel.app/admin`
+
+> **Note**: For local testing before deployment, use the `./start-dev.sh` script to run both services simultaneously.
 
 ## Troubleshooting
 
@@ -93,10 +95,10 @@ node scripts/promoteAdmin.js admin@example.com
 4. **Build Errors**: Check build logs in Vercel dashboard
 
 ### Environment Variables Checklist:
-- [ ] `MONGODB_URI` (Backend)
-- [ ] `JWT_SECRET` (Backend)
+- [ ] `MONGODB_URI` (Backend) - **Critical**
+- [ ] `JWT_SECRET` (Backend) - **Critical**
+- [ ] `VITE_API_URL` (Frontend) - **Critical**
 - [ ] `NODE_ENV=production` (Backend)
-- [ ] `VITE_API_URL` (Frontend)
 
 ## URLs Structure
 - **Frontend**: `https://your-frontend-app.vercel.app`
@@ -107,4 +109,4 @@ node scripts/promoteAdmin.js admin@example.com
 1. Use strong JWT secrets
 2. Enable MongoDB network security
 3. Set up proper CORS origins
-4. Use environment variables for all secrets 
+4. Use environment variables for all secrets

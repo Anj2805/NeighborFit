@@ -1,88 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useUserInsights } from '../../contexts/UserInsightsContext';
 import './Dashboard.css';
-
-interface DashboardStats {
-  totalMatches: number;
-  topMatchScore: number;
-  preferencesCompleted: boolean;
-  recentActivity: string[];
-}
-
-interface QuickMatch {
-  _id: string;
-  name: string;
-  city: string;
-  state: string;
-  matchScore: number;
-  metrics: {
-    safety: number;
-    affordability: number;
-    cleanliness: number;
-    walkability: number;
-    nightlife: number;
-    transport: number;
-  };
-}
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [quickMatches, setQuickMatches] = useState<QuickMatch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      let hasPreferences = false;
-      try {
-      const preferencesResponse = await api.get('/preferences');
-        hasPreferences = preferencesResponse.data !== null;
-      } catch (err: any) {
-        if (err.response && err.response.status === 404) {
-          hasPreferences = false; // No preferences set, not a fatal error
-        } else {
-          throw err; // Other errors should still be handled as errors
-        }
-      }
-      
-      let matches = [];
-      let topScore = 0;
-      
-      if (hasPreferences) {
-        const matchesResponse = await api.get('/neighborhoods/matches');
-        matches = (matchesResponse.data.matches || []).slice(0, 3); // Top 3 matches
-        topScore = matches.length > 0 ? matches[0].matchScore : 0;
-      }
-      
-      setStats({
-        totalMatches: matches.length,
-        topMatchScore: topScore,
-        preferencesCompleted: hasPreferences,
-        recentActivity: [
-          'Profile updated',
-          'New neighborhood matches found',
-          'Preferences saved'
-        ]
-      });
-      
-      setQuickMatches(matches);
-      
-    } catch (err: any) {
-      console.error('Dashboard error:', err);
-      setError('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { stats, matches: quickMatches, loading, refresh } = useUserInsights();
 
   if (loading) {
     return (
@@ -113,14 +37,13 @@ const Dashboard: React.FC = () => {
             <Link to="/matches" className="btn btn-primary">
               View All Matches
             </Link>
+            <button className="btn btn-ghost" onClick={refresh}>
+              Refresh
+            </button>
           </div>
         </div>
 
-        {error && (
-          <div className="alert alert-error">
-            {error}
-          </div>
-        )}
+
 
         {/* Quick Setup */}
         {!stats?.preferencesCompleted && (

@@ -99,7 +99,7 @@ const NeighborhoodDetail: React.FC = () => {
       // Fetch match details if user is logged in
       if (user) {
         try {
-          const matchResponse = await api.get(`/neighborhoods/${id}/match`);
+          const matchResponse = await api.get(`/neighborhoods/${id}/match-details`);
           setMatchDetails(matchResponse.data);
         } catch (matchError) {
           console.log('No match details available (user may not have preferences set)');

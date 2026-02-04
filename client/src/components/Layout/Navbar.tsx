@@ -9,9 +9,6 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Debug logging
-  console.log('Navbar Debug:', { user, loading, userName: user?.name });
-
   const handleLogout = () => {
     logout();
     navigate('/');

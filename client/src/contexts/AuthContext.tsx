@@ -8,6 +8,9 @@ interface User {
   name: string;
   email: string;
   isAdmin: boolean;
+  roles?: string[];
+  familyStatus?: string | null;
+  city?: string | null;
 }
 
 interface AuthContextType {
@@ -21,6 +24,34 @@ interface AuthContextType {
 
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const normalizeUser = (userData: any): User => {
+  let roles: string[] = [];
+  if (Array.isArray(userData.roles)) {
+    roles = userData.roles;
+  } else if (typeof userData.roles === 'string') {
+    roles = userData.roles
+      .split(',')
+      .map((role: string) => role.replace(/["']/g, '').trim())
+      .filter(Boolean);
+  } else if (userData.isAdmin) {
+    roles = ['admin'];
+  } else {
+    roles = ['user'];
+  }
+
+  if (!roles.includes('user')) {
+    roles.push('user');
+  }
+
+  return {
+    ...userData,
+    roles,
+    isAdmin: Boolean(userData.isAdmin || roles.includes('admin')),
+    familyStatus: userData.familyStatus ?? null,
+    city: userData.city ?? null
+  };
+};
 
 // Auth Provider Component
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -36,11 +67,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (storedToken && storedUser) {
         try {
-          // Verify token is still valid by making a test request
+          const parsedUser = JSON.parse(storedUser);
           setToken(storedToken);
-          setUser(JSON.parse(storedUser));
+          const normalized = normalizeUser(parsedUser);
+          localStorage.setItem('user', JSON.stringify(normalized));
+          setUser(normalized);
         } catch (error) {
-          // Token is invalid, clear storage
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
@@ -63,17 +95,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       const { token: newToken, ...userData } = response.data;
+      const normalizedUser = normalizeUser(userData);
 
       // Store in localStorage
       localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
 
       // Update state
       setToken(newToken);
-      setUser(userData);
+      setUser(normalizedUser);
       
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Login failed';
+      const serverMessage = error.response?.data?.message;
+      let message = 'Login failed';
+
+      if (serverMessage) {
+        // Map known server messages to friendlier messages
+        if (serverMessage.includes('Invalid email or password')) {
+          message = 'Invalid email or password. Please check your credentials or reset your password.';
+        } else {
+          message = serverMessage;
+        }
+      }
+
       throw new Error(message);
     } finally {
       setLoading(false);
@@ -92,17 +136,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       const { token: newToken, ...userData } = response.data;
+      const normalizedUser = normalizeUser(userData);
 
       // Store in localStorage
       localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(normalizedUser));
 
       // Update state
       setToken(newToken);
-      setUser(userData);
+      setUser(normalizedUser);
       
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed';
+      const serverMessage = error.response?.data?.message;
+      let message = 'Registration failed';
+
+      if (serverMessage) {
+        // Map known server messages to friendlier messages
+        if (serverMessage.includes('User already exists')) {
+          message = 'An account with this email already exists. Please sign in.';
+        } else {
+          message = serverMessage;
+        }
+      }
+
       throw new Error(message);
     } finally {
       setLoading(false);

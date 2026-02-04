@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
 import './Profile.css';
 
 interface UserProfile {
@@ -38,8 +39,7 @@ const Profile: React.FC = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const { showToast } = useToast();
   
   const [profileData, setProfileData] = useState<UserProfile>({
     name: user?.name || '',
@@ -93,7 +93,9 @@ const Profile: React.FC = () => {
       
     } catch (err: any) {
       console.error('Error fetching user data:', err);
-      setError('Failed to load profile data');
+      const msg = 'Failed to load profile data';
+
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -101,16 +103,16 @@ const Profile: React.FC = () => {
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setLoading(true);
 
     try {
       // Mock API call for profile update
       await new Promise(resolve => setTimeout(resolve, 1000));
-      setSuccess('Profile updated successfully!');
+      const msg = 'Profile updated successfully!';
+      showToast(msg, 'success');
     } catch (err: any) {
-      setError('Failed to update profile');
+      const msg = 'Failed to update profile';
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -118,16 +120,14 @@ const Profile: React.FC = () => {
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
+      showToast('New passwords do not match', 'error');
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
+      showToast('Password must be at least 6 characters long', 'error');
       return;
     }
 
@@ -136,14 +136,15 @@ const Profile: React.FC = () => {
     try {
       // Mock API call for password change
       await new Promise(resolve => setTimeout(resolve, 1000));
-      setSuccess('Password changed successfully!');
+      showToast('Password changed successfully!', 'success');
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
     } catch (err: any) {
-      setError('Failed to change password');
+      const msg = 'Failed to change password';
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -157,7 +158,8 @@ const Profile: React.FC = () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
         logout();
       } catch (err: any) {
-        setError('Failed to delete account');
+        const msg = 'Failed to delete account';
+        showToast(msg, 'error');
         setLoading(false);
       }
     }
@@ -260,17 +262,7 @@ const Profile: React.FC = () => {
 
         {/* Tab Content */}
         <div className="tab-content">
-          {error && (
-            <div className="alert alert-error">
-              {error}
-            </div>
-          )}
-          
-          {success && (
-            <div className="alert alert-success">
-              {success}
-            </div>
-          )}
+
 
           {/* Profile Settings Tab */}
           {activeTab === 'profile' && (

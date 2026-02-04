@@ -1,4 +1,5 @@
 import UserPreferences from '../models/userPreferencesModel.js';
+import { emitUserInsightsUpdate } from '../services/realtimeService.js';
 
 /**
  * Get user preferences
@@ -90,6 +91,7 @@ export const updateUserPreferences = async (req, res) => {
       message: 'Preferences updated successfully',
       preferences
     });
+    emitUserInsightsUpdate(req.user._id, { reason: 'preferences.updated' });
     
   } catch (error) {
     if (error.name === 'ValidationError') {
@@ -115,6 +117,7 @@ export const deleteUserPreferences = async (req, res) => {
     }
     
     res.json({ message: 'Preferences deleted successfully' });
+    emitUserInsightsUpdate(req.user._id, { reason: 'preferences.deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

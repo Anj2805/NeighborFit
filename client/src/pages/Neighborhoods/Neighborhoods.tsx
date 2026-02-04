@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Link } from 'react-router-dom';
+import { useToast } from '../../contexts/ToastContext';
 import './Neighborhoods.css';
 
 interface Neighborhood {
@@ -45,7 +46,7 @@ const Neighborhoods: React.FC = () => {
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([]);
   const [filteredNeighborhoods, setFilteredNeighborhoods] = useState<Neighborhood[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   
   // Pagination state
@@ -98,7 +99,8 @@ const Neighborhoods: React.FC = () => {
       
     } catch (err: any) {
       console.error('Error fetching neighborhoods:', err);
-      setError('Failed to load neighborhoods');
+      const msg = 'Failed to load neighborhoods';
+      showToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -220,11 +222,7 @@ const Neighborhoods: React.FC = () => {
           <p>Discover neighborhoods across India with detailed insights and data</p>
         </div>
 
-        {error && (
-          <div className="alert alert-error">
-            {error}
-          </div>
-        )}
+
 
         {/* Search and Filters */}
         <div className="search-filters">
