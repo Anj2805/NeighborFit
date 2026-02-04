@@ -45,7 +45,7 @@ const UserInsightsContext = createContext<UserInsightsContextValue>({
   matches: [],
   insights: [],
   loading: false,
-  refresh: async () => {}
+  refresh: async () => { }
 });
 
 const clampMetric = (value?: number | null): number => {
@@ -195,7 +195,9 @@ export const UserInsightsProvider: React.FC<{ children: React.ReactNode }> = ({ 
       fetchInsights();
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+    };
   }, [user, token, fetchInsights]);
 
   const value = useMemo(() => ({

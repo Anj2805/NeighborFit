@@ -192,21 +192,29 @@ const AdminNeighborhoods: React.FC = () => {
     }
   ], []);
 
-  const detailQuery = useQuery({
+  const { data: detailData, error: detailError } = useQuery({
     queryKey: ['admin-neighborhood', editingId],
     queryFn: () => adminApi.getNeighborhood(editingId!),
-    enabled: Boolean(editingId),
-    onSuccess: (data) => {
-      const values = buildFormValues(data);
+    enabled: Boolean(editingId)
+  });
+
+  React.useEffect(() => {
+    if (detailData) {
+      const values = buildFormValues(detailData);
       if (editorMode === 'duplicate') {
         values.name = `${values.name} Copy`;
       }
       setInitialFormValues(values);
-    },
-    onError: (error: any) => {
-      showToast(error?.response?.data?.message || 'Failed to load neighborhood', 'error');
     }
-  });
+  }, [detailData, editorMode, buildFormValues]);
+
+  React.useEffect(() => {
+    if (detailError) {
+      // @ts-ignore
+      const message = detailError?.response?.data?.message || 'Failed to load neighborhood';
+      showToast(message, 'error');
+    }
+  }, [detailError, showToast]);
 
   const mutation = useMutation({
     mutationFn: (values: NeighborhoodFormValues) => {
@@ -236,7 +244,7 @@ const AdminNeighborhoods: React.FC = () => {
   };
 
   const latestEvent = events[0];
-  const isRefreshing = neighborhoodsQuery.isFetching || mutation.isLoading;
+  const isRefreshing = neighborhoodsQuery.isFetching || mutation.isPending;
 
   const handleManualRefresh = () => {
     setLastManualRefresh(new Date());
@@ -293,7 +301,7 @@ const AdminNeighborhoods: React.FC = () => {
           <NeighborhoodForm
             initialValues={initialFormValues}
             onSubmit={handleSubmit}
-            submitting={mutation.isLoading}
+            submitting={mutation.isPending}
           />
         ) : (
           <p>Loading...</p>

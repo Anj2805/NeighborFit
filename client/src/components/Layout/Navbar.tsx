@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import './Navbar.css';
 
 const Navbar: React.FC = () => {
-  const { user, logout, loading } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -37,7 +37,7 @@ const Navbar: React.FC = () => {
         </Link>
 
         {/* Mobile menu button */}
-        <button 
+        <button
           className={`navbar-toggle ${isMenuOpen ? 'active' : ''}`}
           onClick={toggleMenu}
           aria-label="Toggle navigation menu"
@@ -51,15 +51,15 @@ const Navbar: React.FC = () => {
         <div className={`navbar-menu ${isMenuOpen ? 'active' : ''}`}>
           <div className="navbar-nav">
             {/* Public links */}
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className={`navbar-link ${isActive('/')}`}
               onClick={closeMenu}
             >
               Home
             </Link>
-            <Link 
-              to="/neighborhoods" 
+            <Link
+              to="/neighborhoods"
               className={`navbar-link ${isActive('/neighborhoods')}`}
               onClick={closeMenu}
             >
@@ -69,22 +69,22 @@ const Navbar: React.FC = () => {
             {/* Authenticated user links */}
             {user ? (
               <>
-                <Link 
-                  to="/dashboard" 
+                <Link
+                  to="/dashboard"
                   className={`navbar-link ${isActive('/dashboard')}`}
                   onClick={closeMenu}
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  to="/matches" 
+                <Link
+                  to="/matches"
                   className={`navbar-link ${isActive('/matches')}`}
                   onClick={closeMenu}
                 >
                   My Matches
                 </Link>
-                <Link 
-                  to="/preferences" 
+                <Link
+                  to="/preferences"
                   className={`navbar-link ${isActive('/preferences')}`}
                   onClick={closeMenu}
                 >
@@ -99,7 +99,7 @@ const Navbar: React.FC = () => {
                     Admin Portal
                   </Link>
                 )}
-                
+
                 {/* User dropdown */}
                 <div className="navbar-user">
                   <div className="user-info">
@@ -109,14 +109,14 @@ const Navbar: React.FC = () => {
                     <span className="user-name">{user?.name || 'User'}</span>
                   </div>
                   <div className="user-dropdown">
-                    <Link 
-                      to="/profile" 
+                    <Link
+                      to="/profile"
                       className="dropdown-link"
                       onClick={closeMenu}
                     >
                       Profile
                     </Link>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="dropdown-link logout-btn"
                     >
@@ -128,15 +128,15 @@ const Navbar: React.FC = () => {
             ) : (
               /* Guest user links */
               <div className="navbar-auth">
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className={`navbar-link ${isActive('/login')}`}
                   onClick={closeMenu}
                 >
                   Login
                 </Link>
-                <Link 
-                  to="/register" 
+                <Link
+                  to="/register"
                   className={`navbar-link navbar-cta ${isActive('/register')}`}
                   onClick={closeMenu}
                 >

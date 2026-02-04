@@ -4,8 +4,8 @@
   "main": "index.js",
   "private": true,
   "workspaces": [
-    "apps/client",
-    "apps/server"
+    "client",
+    "server"
   ],
   "scripts": {
     "dev:client": "npm run dev --workspace client",

@@ -46,15 +46,15 @@ const renderPieLabel = ({
   percent = 0,
   name
 }: PieLabelRenderProps) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  const radius = Number(innerRadius) + (Number(outerRadius) - Number(innerRadius)) * 0.5;
+  const x = Number(cx) + radius * Math.cos(-midAngle * RADIAN);
+  const y = Number(cy) + radius * Math.sin(-midAngle * RADIAN);
   return (
     <text
       x={x}
       y={y}
       fill="#f8fafc"
-      textAnchor={x > cx ? 'start' : 'end'}
+      textAnchor={x > Number(cx) ? 'start' : 'end'}
       dominantBaseline="central"
       fontSize={12}
     >

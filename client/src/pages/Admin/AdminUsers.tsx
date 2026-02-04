@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
+// @ts-ignore
 import { saveAs } from 'file-saver';
 import AdminLayout from '../../components/Admin/AdminLayout';
 import AdminHeader from '../../components/Admin/AdminHeader';

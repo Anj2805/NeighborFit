@@ -121,9 +121,9 @@ const AdminSettings: React.FC = () => {
           <div className="admin-settings-actions">
             <button
               onClick={() => backupMutation.mutate()}
-              disabled={!canTriggerBackup || backupMutation.isLoading}
+              disabled={!canTriggerBackup || backupMutation.isPending}
             >
-              {backupMutation.isLoading ? 'Queuing Backup…' : 'Trigger Backup'}
+              {backupMutation.isPending ? 'Queuing Backup…' : 'Trigger Backup'}
             </button>
             {!canTriggerBackup && (
               <p className="muted">Only super admins can trigger backups.</p>
